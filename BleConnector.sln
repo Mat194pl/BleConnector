@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 15
+VisualStudioVersion = 15.0.27130.2036
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BleConnector", "BleConnector\BleConnector.csproj", "{96764BCB-5308-4817-8086-1C958334E7FE}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{96764BCB-5308-4817-8086-1C958334E7FE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{96764BCB-5308-4817-8086-1C958334E7FE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{96764BCB-5308-4817-8086-1C958334E7FE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{96764BCB-5308-4817-8086-1C958334E7FE}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {01CB8DE0-57BB-4AA0-8372-988B273B5046}
+	EndGlobalSection
+EndGlobal
