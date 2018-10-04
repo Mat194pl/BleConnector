@@ -1,28 +1,20 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.Diagnostics;
-using System.Linq;
-using System.Text;
+﻿using System.Diagnostics;
 using System.Text.RegularExpressions;
-using System.Threading.Tasks;
 using Windows.Devices.Bluetooth.Advertisement;
-using Windows.Devices.Enumeration;
 
-namespace BleConnector
+namespace BleConnector.BLE
 {
-    class DeviceWatcher
+    internal class DeviceWatcher : IDeviceWatcher
     {
-        public delegate void DeviceFoundDelegate();
-
         private BluetoothLEAdvertisementWatcher deviceWatcher;
         private string macFilter = "";
-        public DeviceFoundDelegate DeviceFoundEvent;
-        Stopwatch watch = new Stopwatch();
+        private Stopwatch watch = new Stopwatch();
 
-        public void SetMacFilterString(string mac)
+        public event DeviceFoundEventHandler DeviceFoundEvent;
+
+        public void SetMacFilterString(string Mac)
         {
-            macFilter = mac;
+            macFilter = Mac;
         }
 
         public void StartScanning()
@@ -44,11 +36,11 @@ namespace BleConnector
         private void DeviceWatcher_Received(BluetoothLEAdvertisementWatcher sender, BluetoothLEAdvertisementReceivedEventArgs args)
         {
             var tempMac = args.BluetoothAddress.ToString("X");
-            //tempMac is now 'E7A1F7842F17'
-
             var regex = "(.{2})(.{2})(.{2})(.{2})(.{2})(.{2})";
             var replace = "$1:$2:$3:$4:$5:$6";
             var macAddress = Regex.Replace(tempMac, regex, replace);
+
+            // TODO: Add log advertising data functionality
 
             /*var list = args.Advertisement.DataSections;
             foreach (BluetoothLEAdvertisementDataSection data in args.Advertisement.DataSections)
@@ -62,12 +54,11 @@ namespace BleConnector
                 {
                     Console.WriteLine("Data:");
                     Console.WriteLine("DT: " + data.DataType);
-                   
+
                     Console.WriteLine(hex);
                 }
             }*/
 
-            
             if (macAddress.Equals(macFilter))
             {
                 if (watch.ElapsedMilliseconds > 1000) // Fire event not more than once per second
@@ -90,8 +81,6 @@ namespace BleConnector
                     Console.WriteLine("UUID: " + uuid);
                 }*/
             }
-            
-
         }
     }
 }

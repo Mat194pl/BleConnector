@@ -1,12 +1,8 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace BleConnector.CSV.InputData
 {
-    class InputDataEntry
+    internal class InputDataEntry
     {
         public Guid UUID;
         public byte[] DataToSend;

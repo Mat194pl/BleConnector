@@ -75,11 +75,13 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AppConf.cs" />
+    <Compile Include="BLE\IDeviceConnector.cs" />
+    <Compile Include="BLE\IDeviceWatcher.cs" />
     <Compile Include="CSV\InputData\InputDataEntry.cs" />
     <Compile Include="CSV\InputData\InputDataParser.cs" />
     <Compile Include="CSV\OutputData\CsvDataWriter.cs" />
-    <Compile Include="DeviceConnector.cs" />
-    <Compile Include="DeviceWatcher.cs" />
+    <Compile Include="BLE\DeviceConnector.cs" />
+    <Compile Include="BLE\DeviceWatcher.cs" />
     <Compile Include="Options.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

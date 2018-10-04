@@ -2,48 +2,38 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices.WindowsRuntime;
-using System.Text;
 using System.Threading.Tasks;
 using Windows.Devices.Bluetooth;
 using Windows.Devices.Bluetooth.GenericAttributeProfile;
 using Windows.Devices.Enumeration;
 using Windows.Storage.Streams;
 
-namespace BleConnector
+namespace BleConnector.BLE
 {
-    public class DeviceConnector
+    public class DeviceConnector : IDeviceConnector
     {
-        public delegate void CharacteristicDataReceivedHandler(Guid characteristicUuuid, byte[] receivedData);
-        CharacteristicDataReceivedHandler characteristicDataHandler;
+        private CharacteristicDataReceivedHandler characteristicDataHandler;
 
         private bool is_connected = false;
-        public bool IsConnected
+
+        public bool IsConnected()
         {
-            get
-            {
-                return is_connected;
-            }
+            return is_connected;
         }
 
-        public bool IsDeviceFound
+        public bool IsDeviceFound()
         {
-            get
-            {
-                return bluetoothLeDevice != null;
-            }
+            return bluetoothLeDevice != null;
         }
 
-        GattCharacteristic logChar = null;
         private static BluetoothLEDevice bluetoothLeDevice = null;
-
-        // Define Service List.  
         public List<string> ServiceList = new List<string>();
         public List<string> characteristicList = new List<string>();
 
         private List<GattDeviceService> deviceServices = null;
         private List<GattCharacteristic> deviceCharacteristics = null;
 
-        bool mutex = true;
+        private bool mutex = true;
 
         public async Task ConnectToDevice(string mac)
         {
@@ -67,7 +57,7 @@ namespace BleConnector
             }
             else
             {
-                Console.WriteLine("Connecting to " + mac);             
+                Console.WriteLine("Connecting to " + mac);
                 bluetoothLeDevice.ConnectionStatusChanged += BluetoothLeDevice_ConnectionStatusChanged;
                 bluetoothLeDevice.GattServicesChanged += BluetoothLeDevice_GattServicesChanged;
             }
@@ -87,7 +77,6 @@ namespace BleConnector
             {
                 bluetoothLeDevice = null;
             }
-
         }
 
         private void BluetoothLeDevice_ConnectionStatusChanged(BluetoothLEDevice sender, object args)
@@ -115,7 +104,7 @@ namespace BleConnector
 
             try
             {
-                var result = await chr.WriteValueWithResultAsync(bufferToSend);
+                await chr.WriteValueWithResultAsync(bufferToSend);
             }
             catch (Exception e)
             {
@@ -140,7 +129,7 @@ namespace BleConnector
 
                 if (gattDeviceServicesResult.Status == GattCommunicationStatus.Success)
                 {
-                    services = gattDeviceServicesResult.Services;            
+                    services = gattDeviceServicesResult.Services;
 
                     foreach (GattDeviceService ser in services)
                     {
@@ -154,8 +143,8 @@ namespace BleConnector
                             var accessStatus = await ser.RequestAccessAsync();
                             if (accessStatus == DeviceAccessStatus.Allowed)
                             {
-                                // BT_Code: Get all the child characteristics of a service. Use the cache mode to specify uncached characterstics only 
-                                // and the new Async functions to get the characteristics of unpaired devices as well. 
+                                // BT_Code: Get all the child characteristics of a service. Use the cache mode to specify uncached characterstics only
+                                // and the new Async functions to get the characteristics of unpaired devices as well.
                                 gattCharacteristicResult = await ser.GetCharacteristicsAsync(BluetoothCacheMode.Uncached);
                                 if (gattCharacteristicResult.Status == GattCommunicationStatus.Success)
                                 {
@@ -167,8 +156,6 @@ namespace BleConnector
                                         characteristicList.Add(chr.Uuid.ToString());
                                         deviceCharacteristics.Add(chr);
                                     }
-
-
                                 }
                                 else
                                 {
@@ -176,26 +163,19 @@ namespace BleConnector
                             }
                             else
                             {
-                                
                             }
                         }
                         catch (Exception ex)
                         {
-                           
+                            Console.WriteLine(ex);
                         }
-
                     }
                 }
                 else
                 {
                 }
             }
-
-
-            Guid serviceGuid = Guid.Parse("ae000001-c254-e084-6940-8f5de0ffd2b8");
-
             Console.WriteLine("Discover end");
-
         }
 
         private async Task<bool> RegisterCharacteristicChange(Guid characteristicUuid)
@@ -204,12 +184,10 @@ namespace BleConnector
 
             if (chr == null)
             {
-
             }
 
             try
             {
-
                 GattCommunicationStatus status = await chr.WriteClientCharacteristicConfigurationDescriptorAsync(
                             GattClientCharacteristicConfigurationDescriptorValue.Notify);
                 if (status == GattCommunicationStatus.Success)
@@ -233,29 +211,6 @@ namespace BleConnector
             byte[] receivedBytes = readBuffer.ToArray();
 
             characteristicDataHandler?.Invoke(sender.Uuid, receivedBytes);
-        }
-
-        private async Task<bool> RegisterLogCharacteristicChange()
-        {
-            GattCommunicationStatus status = await logChar.WriteClientCharacteristicConfigurationDescriptorAsync(
-                        GattClientCharacteristicConfigurationDescriptorValue.Notify);
-            if (status == GattCommunicationStatus.Success)
-            {
-                // Server has been informed of clients interest.
-            }
-
-            logChar.ValueChanged += LogChar_ValueChanged; ;
-
-            return true;
-        }
-
-        private void UnregisterLogCharacteristicChange()
-        {
-            logChar.ValueChanged -= LogChar_ValueChanged;
-        }
-
-        private static void LogChar_ValueChanged(GattCharacteristic sender, GattValueChangedEventArgs args)
-        {
         }
     }
 }

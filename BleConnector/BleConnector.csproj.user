@@ -11,6 +11,6 @@
     <VerifyUploadedFiles>false</VerifyUploadedFiles>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|AnyCPU'">
-    <StartArguments>-m D0:4A:AA:0D:EC:3F -i data_to_send.csv</StartArguments>
+    <StartArguments>-m D0:4A:AA:0D:EC:3F -i data_to_send.csv  -c altlight_plug_conf.xml</StartArguments>
   </PropertyGroup>
 </Project>

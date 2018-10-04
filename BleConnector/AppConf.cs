@@ -1,10 +1,8 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using System.Xml.Serialization;
+using BleConnector.BLE;
 
 namespace BleConnector
 {
@@ -37,7 +35,6 @@ namespace BleConnector
             [XmlArrayItem("Characteristic", typeof(Characteristic))]
             public Characteristic[] Characteristic { get; set; }
         }
-
 
         [Serializable()]
         [System.Xml.Serialization.XmlRoot("Configuration")]
@@ -74,7 +71,7 @@ namespace BleConnector
 
                 Console.WriteLine("present");
 
-                foreach(var characteristic in service.Characteristic)
+                foreach (var characteristic in service.Characteristic)
                 {
                     Console.Write("\t\tCheck characteristic: " + characteristic.UUID + " ... ");
                     if (!connector.characteristicList.Contains(characteristic.UUID))
@@ -93,9 +90,7 @@ namespace BleConnector
 
                     Console.WriteLine("present");
                 }
-
             }
-
 
             return true;
         }

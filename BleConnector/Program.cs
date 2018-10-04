@@ -1,23 +1,24 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+using System.IO;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using BleConnector.BLE;
 using CommandLine;
 
 namespace BleConnector
 {
-    class Program
+    internal class Program
     {
-        static DeviceConnector deviceConnector;
-        static DeviceWatcher watcher;
-        static string macToFind = "";
-        static void Main(string[] args)
+        private static DeviceConnector deviceConnector;
+        private static DeviceWatcher watcher;
+        private static string macToFind = "";
+
+        private static void Main(string[] args)
         {
             var options = new Options();
             string macArgInput = "";
             string inputDataFilePath = "";
+            string configurationFilePath = "";
             CommandLine.Parser.Default.ParseArguments<Options>(args).WithParsed<Options>(o =>
             {
                 if (o.MacAddress != String.Empty)
@@ -25,50 +26,69 @@ namespace BleConnector
                     Console.WriteLine("MAC: {0}", o.MacAddress);
                     macArgInput = o.MacAddress;
                 }
+                else
+                {
+                    PrintWrongMacArgumentInfo();
+                    Environment.Exit(-1);
+                }
 
-                if (o.InputDataFilePath != String.Empty)
+                if (!File.Exists(o.InputDataFilePath))
+                {
+                    PrintWrongInputFileArgumentInfo((o.InputDataFilePath));
+                    Environment.Exit(-1);
+                }
+                else
                 {
                     inputDataFilePath = o.InputDataFilePath;
+                }
+
+                if (!File.Exists(o.ConfigurationFilePath))
+                {
+                    PrintWrongInputFileArgumentInfo(o.ConfigurationFilePath);
+                    Environment.Exit(-1);
+                }
+                else
+                {
+                    configurationFilePath = o.ConfigurationFilePath;
                 }
             }
             );
 
+            watcher = new DeviceWatcher();
+            deviceConnector = new DeviceConnector();
 
             // Check MAC address
             string macRegex = @"^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$";
-
             Regex regex = new Regex(macRegex);
-
-            watcher = new DeviceWatcher();
-            deviceConnector = new DeviceConnector();
 
             if (regex.IsMatch(macArgInput))
             {
                 macToFind = macArgInput;
                 watcher.SetMacFilterString(macArgInput);
-                watcher.DeviceFoundEvent += found_device;
+                watcher.DeviceFoundEvent += FoundDeviceEventHandler;
             }
-
+            else
+            {
+                PrintWrongMacArgumentInfo();
+                Environment.Exit(-1);
+            }
 
             watcher.StartScanning();
 
             // Wait for connection
-            while (!deviceConnector.IsDeviceFound)
+            while (!deviceConnector.IsDeviceFound())
             {
-
             }
 
             while (deviceConnector.ServiceList.Count == 0)
             {
-                // Find service
+                // Discover services and characteristics
                 Task.Run(async () =>
                 {
                     await deviceConnector.DiscoverServices();
                 }).GetAwaiter().GetResult();
-              
-               
             }
-    
+
             Console.WriteLine("Load configuration file");
             AppConf.Configuration configuration = AppConf.DeserializeXml("altlight_plug_conf.xml");
             bool checkResult = AppConf.ApplyConfigurationConditions(configuration, deviceConnector);
@@ -79,10 +99,11 @@ namespace BleConnector
             CSV.InputData.InputDataParser inputDataParser = new CSV.InputData.InputDataParser();
             inputDataParser.OpenFile(inputDataFilePath);
 
-            while(true)
+            while (true)
             {
                 CSV.InputData.InputDataEntry entry = inputDataParser.GetNextEntry();
 
+                // If entry is null, then this must be end of file
                 if (entry == null)
                 {
                     break;
@@ -90,21 +111,49 @@ namespace BleConnector
 
                 Console.WriteLine(entry);
 
+                // Send data to specified uuid
                 Task.Run(async () =>
                 {
                     await deviceConnector.WriteDataToCharacteristic(entry.UUID, entry.DataToSend);
-                }).GetAwaiter().GetResult();            
+                }).GetAwaiter().GetResult();
+
+                // Wait some time, TODO: Find the way to send data without losing it and not using fixed interval 
+                Task.Run(async () =>
+                {
+                    await Task.Delay(400);
+                }).GetAwaiter().GetResult();
             }
 
-            Task.Delay(1000);
+            // Wait some time after sending last part of input data
+            Task.Run(async () =>
+            {
+                await Task.Delay(1000);
+            }).GetAwaiter().GetResult();
 
+            // Flush received data to .csv files
             CSV.OutputData.CsvDataWriter.FlushDataToFiles();
         }
 
-        static async void found_device()
+        private static void PrintWrongMacArgumentInfo()
+        {
+            Console.WriteLine("Wrong MAC address format, try XX:XX:XX:XX:XX:XX or XX-XX-XX-XX-XX-XX");
+        }
+
+        private static void PrintWrongInputFileArgumentInfo(string filePath)
+        {
+            Console.WriteLine("Wrong input data file path: " + filePath);
+        }
+
+        private static void PrintWrongConfigurationFileArgumentInfo(string filePath)
+        {
+            Console.WriteLine("Wrong configuration file path: " + filePath);
+        }
+
+        private static async void FoundDeviceEventHandler()
         {
             watcher.StopScanning();
-            if (!deviceConnector.IsConnected)
+            // If device is still not connected, try to connect to it and start scanning again
+            if (!deviceConnector.IsConnected())
             {
                 await deviceConnector.ConnectToDevice(macToFind);
                 watcher.StartScanning();
